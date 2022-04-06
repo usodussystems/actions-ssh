@@ -1,0 +1,44 @@
+name: 'SSH Environment'
+description: 'Usodus deployment configuration via ssh, connect to "server"'
+inputs:
+  host:  # ID Service
+    description: address to the host 
+    required: true
+  user:  # ID Service
+    description: user to connect to instance
+    required: true
+  ssh_key:
+    description: SSH Key (ed25519) with permissions to download repos
+    required: true
+    default: ''
+outputs: {}
+runs:
+  using: "composite"
+  steps:
+    - name: Setup SSH
+      shell: bash
+      env:
+         SSH_KEY: ${{ inputs.ssh_key }}
+      run: |
+        mkdir -p ~/.ssh/
+        cat>~/.ssh/ssh_key<<EOF
+        ${SSH_KEY}
+        EOF
+        chmod 400 ~/.ssh/ssh_key
+
+    - name: Config SSH
+      shell: bash
+      env:
+         HOST: ${{ inputs.host }}
+         USER: ${{ inputs.user }}
+      run: |
+        cat>~/.ssh/config<<EOF
+        Host server
+          Hostname ${HOST}
+          User ${USER}
+          IdentityFile ~/.ssh/ssh_key
+          StrictHostKeyChecking no
+          UserKnownHostsFile /dev/null
+          ServerAliveInterval 120
+        EOF
+        
